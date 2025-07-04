@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xdap - Image to hd</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+        integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 80%;
+            max-width: 800px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .upload-container {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        .upload-container:hover {
+            border-color: #3498db;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 40px;
+            color: #777;
+            margin-bottom: 10px;
+        }
+
+        .upload-text {
+            color: #555;
+        }
+
+        .image-preview {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .image-preview div {
+            margin: 10px;
+            text-align: center;
+        }
+
+        .image-preview img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 10px;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .loading-spinner {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #3498db;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        button {
+            background-color: #3498db;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .download-button {
+            background-color: #2ecc71;
+        }
+
+        .download-button:hover {
+            background-color: #27ae60;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            margin-top: 20px;
+        }
+
+        #enhancedImageContainer {
+            position: relative;
+        }
+
+        #loadingOverlay.hidden {
+            display: none;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                width: 95%;
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .upload-icon {
+                font-size: 30px;
+            }
+
+            .upload-text {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>XDAP - INAGES TO HD </h1>
+
+        <form id="uploadForm">
+            <div class="upload-container" onclick="document.getElementById('imageInput').click();">
+                <i class="fas fa-upload upload-icon"></i>
+                <p class="upload-text">Click to upload image</p>
+                <input type="file" id="imageInput" name="image" accept="image/*">
+            </div>
+            <button type="submit">
+                <i class="fas fa-magic"></i> Enhance Image
+            </button>
+        </form>
+
+        <p id="errorMessage" class="error-message"></p>
+
+        <div class="image-preview">
+            <div>
+                <h3>Original Image</h3>
+                <img id="originalImage" src="" alt="Original Image">
+            </div>
+            <div id="enhancedImageContainer">
+                <h3>Enhanced Image</h3>
+                <div id="loadingOverlay" class="loading-overlay hidden">
+                    <div class="loading-spinner"></div>
+                </div>
+                <img id="enhancedImage" src="" alt="Enhanced Image" style="max-width: 100%;">
+                <a id="downloadLink" href="" download="enhanced_image.png" style="display: none;">
+                    <button class="download-button">
+                        <i class="fas fa-download"></i> Download Enhanced Image
+                    </button>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const uploadForm = document.getElementById('uploadForm');
+            const imageInput = document.getElementById('imageInput');
+            const originalImage = document.getElementById('originalImage');
+            const enhancedImage = document.getElementById('enhancedImage');
+            const enhancedImageContainer = document.getElementById('enhancedImageContainer');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const downloadLink = document.getElementById('downloadLink');
+            const errorMessage = document.getElementById('errorMessage');
+
+            imageInput.addEventListener('change', () => {
+                const file = imageInput.files[0];
+                if (file) {
+                    originalImage.src = URL.createObjectURL(file); // Show preview immediately
+                } else {
+                    originalImage.src = ""; // Clear preview if no file
+                }
+            });
+
+            uploadForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                errorMessage.textContent = '';
+                enhancedImage.src = '';
+                downloadLink.style.display = 'none';
+
+                const file = imageInput.files[0];
+                if (!file) {
+                    errorMessage.textContent = 'Please select an image.';
+                    return;
+                }
+
+                loadingOverlay.classList.remove('hidden');
+                enhancedImageContainer.style.position = 'relative';
+
+                const formData = new FormData();
+                formData.append('image', file);
+
+                try {
+                    const response = await fetch('/upscale', {
+                        method: 'POST',
+                        body: formData,
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Error processing image.');
+                    }
+
+                    const data = await response.json();
+                    enhancedImage.src = data.enhancedImage;
+                    downloadLink.href = data.enhancedImage;
+                    downloadLink.style.display = 'inline-block';
+                } catch (error) {
+                    console.error(error);
+                    errorMessage.textContent = error.message;
+                } finally {
+                    loadingOverlay.classList.add('hidden');
+                    enhancedImageContainer.style.position = '';
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
